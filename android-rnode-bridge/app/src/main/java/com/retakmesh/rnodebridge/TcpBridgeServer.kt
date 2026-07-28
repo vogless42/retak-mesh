@@ -1,18 +1,14 @@
 package com.retakmesh.rnodebridge
 
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
-import java.io.InputStream
-import java.io.OutputStream
 import java.net.ServerSocket
 import java.net.Socket
+import java.util.concurrent.atomic.AtomicBoolean
 
 class TcpBridgeServer(
     private val port: Int = 9090
 ) {
     private var serverSocket: ServerSocket? = null
     private var clientSocket: Socket? = null
-    private var bridgeJob: Job? = null
 
     interface UsbIo {
         fun read(buffer: ByteArray): Int
@@ -36,13 +32,14 @@ class TcpBridgeServer(
     }
 
     private fun bridgeLoop(socket: Socket, usbIo: UsbIo) {
+        val connected = java.util.concurrent.atomic.AtomicBoolean(true)
         val tcpIn = socket.getInputStream()
         val tcpOut = socket.getOutputStream()
 
         val readerThread = Thread {
             val buf = ByteArray(4096)
             try {
-                while (socket.isConnected) {
+                while (connected.get()) {
                     val n = usbIo.read(buf)
                     if (n > 0) {
                         tcpOut.write(buf, 0, n)
@@ -56,7 +53,7 @@ class TcpBridgeServer(
         val writerThread = Thread {
             val buf = ByteArray(4096)
             try {
-                while (socket.isConnected) {
+                while (connected.get()) {
                     val n = tcpIn.read(buf)
                     if (n > 0) {
                         usbIo.write(buf.copyOfRange(0, n))
@@ -66,24 +63,23 @@ class TcpBridgeServer(
                 }
             } catch (_: Exception) {
             }
+            connected.set(false)
+            try { socket.close() } catch (_: Exception) {}
         }
 
         readerThread.start()
         writerThread.start()
 
         try {
-            readerThread.join()
+            writerThread.join()
         } catch (_: InterruptedException) {
         }
-        try {
-            writerThread.interrupt()
-        } catch (_: Exception) {
-        }
-
         try {
             socket.close()
         } catch (_: Exception) {
         }
+
+        readerThread.interrupt()
     }
 
     fun stop() {
