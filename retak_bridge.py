@@ -8,6 +8,12 @@ import argparse
 import threading
 import queue
 
+# Inject shim path before RNS imports so Reticulum's Android interface
+# finds usbserial4a and jnius on Termux (which doesn't have Android native APIs)
+_shim_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "retakmesh")
+if _shim_dir not in sys.path:
+    sys.path.insert(0, _shim_dir)
+
 from retakmesh.config import Config
 from retakmesh.mesh import MeshInterface
 from retakmesh.atak_listener import ATAKListener
