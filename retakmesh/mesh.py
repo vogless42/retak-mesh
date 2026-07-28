@@ -2,6 +2,7 @@ import os
 import time
 import threading
 import RNS
+from .config import RNS_CONFIG_DIR
 
 APP_NAME = "retak"
 APP_ASPECT = "cot"
