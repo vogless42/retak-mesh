@@ -9,7 +9,15 @@ APP_ASPECT = "cot"
 ANNOUNCE_INTERVAL = 300
 PEER_TIMEOUT = 900
 
-RETICULUM_CONFIG = """
+RNODE_INTERFACE_TEMPLATE = """
+  [[RNodeInterface]]
+    type = RNodeInterface
+    enabled = yes
+    port = {port}
+    frequency = {freq}
+"""
+
+RETICULUM_CONFIG_HEAD = """
 [reticulum]
 enable_transport = Yes
 share_instance = Yes
@@ -19,9 +27,6 @@ shared_instance_port = 37428
 loglevel = 3
 
 [interfaces]
-  [[AutoInterface]]
-    type = AutoInterface
-    enabled = Yes
 """
 
 
@@ -48,11 +53,20 @@ class MeshInterface:
 
         RNS.Transport.register_announce_handler(self._on_announce)
 
+    def _build_reticulum_config(self):
+        body = RETICULUM_CONFIG_HEAD
+        if self.config.rnode_port:
+            body += RNODE_INTERFACE_TEMPLATE.format(
+                port=self.config.rnode_port,
+                freq=self.config.rnode_freq,
+            )
+        return body
+
     def _ensure_reticulum_config(self):
         config_path = os.path.join(RNS_CONFIG_DIR, "config")
         if not os.path.exists(config_path):
             with open(config_path, "w") as f:
-                f.write(RETICULUM_CONFIG)
+                f.write(self._build_reticulum_config())
 
     def start(self):
         self.running = True

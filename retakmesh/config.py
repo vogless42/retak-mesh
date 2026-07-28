@@ -5,9 +5,11 @@ import RNS
 CONFIG_DIR = os.path.expanduser("~/.retakmesh")
 IDENTITY_FILE = os.path.join(CONFIG_DIR, "identity")
 RNS_CONFIG_DIR = os.path.join(CONFIG_DIR, "reticulum")
+FREQ_FILE = os.path.join(CONFIG_DIR, "rnode_freq")
 
 DEFAULT_ATAK_HOST = "239.2.3.1"
 DEFAULT_ATAK_PORT = 6969
+DEFAULT_RNODE_FREQ = 915000000
 
 
 class Config:
@@ -15,10 +17,12 @@ class Config:
         self.atak_host = DEFAULT_ATAK_HOST
         self.atak_port = DEFAULT_ATAK_PORT
         self.rnode_port = None
+        self.rnode_freq = DEFAULT_RNODE_FREQ
         self.callsign = None
         self.identity = None
 
         self._ensure_dirs()
+        self._load_rnode_freq()
         self._load_or_create_identity()
         self._detect_rnode()
         self._generate_callsign()
@@ -26,6 +30,15 @@ class Config:
     def _ensure_dirs(self):
         os.makedirs(CONFIG_DIR, exist_ok=True)
         os.makedirs(RNS_CONFIG_DIR, exist_ok=True)
+
+    def _load_rnode_freq(self):
+        if os.path.exists(FREQ_FILE):
+            try:
+                with open(FREQ_FILE) as f:
+                    val = f.read().strip()
+                    self.rnode_freq = int(val)
+            except (ValueError, OSError):
+                pass
 
     def _load_or_create_identity(self):
         if os.path.exists(IDENTITY_FILE):
