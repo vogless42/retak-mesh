@@ -15,6 +15,10 @@ RNODE_INTERFACE_TEMPLATE = """
     enabled = yes
     port = {port}
     frequency = {freq}
+    bandwidth = 250000
+    spreadingfactor = 8
+    codingrate = 5
+    txpower = 14
 """
 
 RETICULUM_CONFIG_HEAD = """
