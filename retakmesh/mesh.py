@@ -67,6 +67,15 @@ class MeshInterface:
         if not os.path.exists(config_path):
             with open(config_path, "w") as f:
                 f.write(self._build_reticulum_config())
+        elif self.config.rnode_port:
+            with open(config_path) as f:
+                content = f.read()
+            if "RNodeInterface" not in content:
+                with open(config_path, "a") as f:
+                    f.write(RNODE_INTERFACE_TEMPLATE.format(
+                        port=self.config.rnode_port,
+                        freq=self.config.rnode_freq,
+                    ))
 
     def start(self):
         self.running = True
